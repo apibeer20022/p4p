@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบบันทึก P4P รังสีเทคนิค</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Hide number input spin arrows */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    .touch-btn {
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen pb-24">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-indigo-700 text-white shadow-md">
+    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="bg-indigo-600 p-2 rounded-xl">
+          <i data-lucide="activity" class="w-5 h-5 text-indigo-100"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-base leading-tight">บันทึก P4P รังสี</h1>
+          <p class="text-xs text-indigo-200">งานรังสีเทคนิค / การแพทย์</p>
+        </div>
+      </div>
+      <button onclick="toggleQuickTips()" class="text-indigo-200 hover:text-white p-2 rounded-lg bg-indigo-800/60 active:scale-95 transition" title="คำแนะนำ">
+        <i data-lucide="help-circle" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Quick Stats Bar in Header -->
+    <div class="bg-indigo-900/60 backdrop-blur px-4 py-2 text-xs border-t border-indigo-600/50">
+      <div class="max-w-md mx-auto flex justify-between items-center text-indigo-100 font-medium">
+        <span id="headerDateLabel">วันที่: วันนี้</span>
+        <div class="flex items-center space-x-3">
+          <span>รวมวัน: <strong id="headerDayCount" class="text-amber-300 font-semibold text-sm">0</strong> งาน</span>
+          <span>คะแนน: <strong id="headerDayScore" class="text-emerald-300 font-semibold text-sm">0.00</strong></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Help / Info Modal / Banner -->
+  <div id="quickTipsModal" class="hidden max-w-md mx-auto px-4 pt-3">
+    <div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl text-xs text-blue-900 relative shadow-sm">
+      <button onclick="toggleQuickTips()" class="absolute top-2 right-2 text-blue-400 hover:text-blue-700 p-1">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+      <div class="font-bold mb-1 flex items-center gap-1">
+        <i data-lucide="info" class="w-4 h-4 text-blue-600"></i> ทริคง่ายๆ สำหรับคุณ
+      </div>
+      <ul class="list-disc pl-4 space-y-1 text-blue-800">
+        <li>แตะปุ่ม <b>+</b> หรือ <b>-</b> ขนาดใหญ่ได้รวดเร็วขณะทำงานในเวร</li>
+        <li>หรือแตะที่ตัวเลขตรงกลางเพื่อพิมพ์จำนวนเคสทีเดียว</li>
+        <li>ระบบบันทึกในโทรศัพท์อัตโนมัติทันที ไม่ต้องกลัวข้อมูลหาย</li>
+        <li>สิ้นเดือนกดแท็บ <b>"สรุปรายเดือน"</b> เพื่อลอกตัวเลขลงตารางจริงได้เลย</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="max-w-md mx-auto px-3.5 pt-3">
+
+    <!-- View: Daily Log -->
+    <div id="viewDaily" class="space-y-4">
+      
+      <!-- Date Selector & Quick Filters -->
+      <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between gap-2">
+          <button onclick="changeDateOffset(-1)" class="p-2.5 rounded-xl bg-slate-100 text-slate-700 active:bg-slate-200 touch-btn">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+          </button>
+          
+          <div class="flex-1 text-center">
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">เลือกวันที่บันทึก</label>
+            <input type="date" id="selectedDate" onchange="onDateChanged()" class="w-full text-center font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <button onclick="changeDateOffset(1)" class="p-2.5 rounded-xl bg-slate-100 text-slate-700 active:bg-slate-200 touch-btn">
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+          </button>
+          
+          <button onclick="setToday()" class="px-2.5 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl active:scale-95 touch-btn">
+            วันนี้
+          </button>
+        </div>
+
+        <!-- Quick Summary Cards for Day -->
+        <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100">
+          <div class="bg-slate-50 p-2 rounded-xl text-center">
+            <span class="block text-[11px] text-slate-500 font-normal">จำนวนรวม</span>
+            <span id="dayTotalJobs" class="text-base font-bold text-slate-800">0</span>
+            <span class="text-[10px] text-slate-400">รายการ</span>
+          </div>
+          <div class="bg-emerald-50 p-2 rounded-xl text-center border border-emerald-100">
+            <span class="block text-[11px] text-emerald-700 font-normal">คะแนนรวม</span>
+            <span id="dayTotalScore" class="text-base font-bold text-emerald-700">0.00</span>
+            <span class="text-[10px] text-emerald-600">คะแนน</span>
+          </div>
+          <div class="bg-amber-50 p-2 rounded-xl text-center border border-amber-100">
+            <span class="block text-[11px] text-amber-700 font-normal">เวลารวม</span>
+            <span id="dayTotalTime" class="text-base font-bold text-amber-700">0</span>
+            <span class="text-[10px] text-amber-600">นาที</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action: Search/Filter item -->
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        <input type="text" id="filterInput" oninput="filterItems()" placeholder="ค้นหางาน เช่น walk in, เปล, Mammogram..." class="w-full pl-9 pr-8 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
+        <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Category 1: ความรับผิดชอบหลัก -->
+      <div class="category-block" id="catBlockPrimary">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block"></span>
+            <h2 class="font-bold text-sm text-slate-800">ความรับผิดชอบหลัก (19 รายการ)</h2>
+          </div>
+          <span id="catPrimaryScoreBadge" class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold border border-indigo-100">0.00 คะแนน</span>
+        </div>
+        <div id="primaryItemsList" class="space-y-2">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Category 2: ความรับผิดชอบรอง -->
+      <div class="category-block" id="catBlockSecondary">
+        <div class="flex items-center justify-between mb-2 mt-4 px-1">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block"></span>
+            <h2 class="font-bold text-sm text-slate-800">ความรับผิดชอบรอง (6 รายการ)</h2>
+          </div>
+          <span id="catSecondaryScoreBadge" class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold border border-emerald-100">0.00 คะแนน</span>
+        </div>
+        <div id="secondaryItemsList" class="space-y-2">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Reset Day Button -->
+      <div class="pt-2 text-center pb-8">
+        <button onclick="confirmResetDay()" class="text-xs text-rose-500 hover:text-rose-700 inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-rose-200 bg-rose-50/50">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> ล้างข้อมูลเฉพาะวันนี้
+        </button>
+      </div>
+
+    </div>
+
+    <!-- View: Monthly Summary & Report -->
+    <div id="viewMonthly" class="hidden space-y-4">
+      
+      <!-- Month Selector & Controls -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+        <div class="flex items-center justify-between gap-3">
+          <button onclick="changeMonthOffset(-1)" class="p-2.5 rounded-xl bg-slate-100 text-slate-700 active:bg-slate-200 touch-btn">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+          </button>
+          
+          <div class="flex-1 text-center">
+            <label class="block text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-0.5">เลือกเดือนสรุปผล</label>
+            <input type="month" id="selectedMonth" onchange="renderMonthlySummary()" class="w-full text-center font-bold text-indigo-900 bg-indigo-50/60 border border-indigo-200 rounded-lg py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <button onclick="changeMonthOffset(1)" class="p-2.5 rounded-xl bg-slate-100 text-slate-700 active:bg-slate-200 touch-btn">
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Monthly Big Stat Box -->
+        <div class="mt-4 bg-gradient-to-br from-indigo-700 to-indigo-900 text-white rounded-xl p-4 shadow-sm">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs text-indigo-200">คะแนน P4P รวมทั้งเดือน</p>
+              <h2 id="monthGrandScore" class="text-3xl font-black tracking-tight text-white mt-0.5">0.00</h2>
+            </div>
+            <div class="text-right">
+              <span class="inline-block bg-white/20 text-white text-[11px] px-2 py-0.5 rounded-full font-medium" id="monthRecordedDaysCount">0 วันที่มีการบันทึก</span>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-indigo-600/60 text-xs">
+            <div>
+              <span class="text-indigo-200 block text-[11px]">งานหลักสะสม:</span>
+              <span id="monthPrimaryScore" class="font-bold text-amber-300 text-sm">0.00 คะแนน</span>
+            </div>
+            <div>
+              <span class="text-indigo-200 block text-[11px]">งานรองสะสม:</span>
+              <span id="monthSecondaryScore" class="font-bold text-emerald-300 text-sm">0.00 คะแนน</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons: Copy / Export -->
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <button onclick="copySummaryToClipboard()" class="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm active:scale-95 transition">
+            <i data-lucide="copy" class="w-4 h-4"></i> คัดลอกตารางไปวาง Excel
+          </button>
+          <button onclick="exportJSONBackup()" class="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm active:scale-95 transition">
+            <i data-lucide="download" class="w-4 h-4"></i> สำรองข้อมูล (Backup)
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Sheet Identical to Paper Form -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200">
+          <div>
+            <h3 class="text-xs font-bold text-slate-800">ตารางเทียบฟอร์มขอเบิกเงิน P4P</h3>
+            <p class="text-[11px] text-slate-500">ดูตัวเลขในคอลัมน์ "จำนวนรวม" เพื่อนำไปกรอกฟอร์ม</p>
+          </div>
+          <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded">ลอกตามนี้ได้เลย</span>
+        </div>
+
+        <!-- Scrollable Table -->
+        <div class="overflow-x-auto -mx-1">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-indigo-50/70 text-indigo-900 border-b border-indigo-200 text-[11px]">
+                <th class="py-2 px-2 font-bold">กิจกรรมบริการ</th>
+                <th class="py-2 px-1 text-center font-bold">จำนวนรวม</th>
+                <th class="py-2 px-1 text-right font-medium">คะแนน/หน่วย</th>
+                <th class="py-2 px-2 text-right font-bold">คะแนนรวม</th>
+              </tr>
+            </thead>
+            <tbody id="monthlySummaryTableBody" class="divide-y divide-slate-100">
+              <!-- Rendered via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Data Management / Import -->
+      <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 text-xs">
+        <p class="font-bold text-slate-700 mb-1 flex items-center gap-1">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-slate-500"></i> การจัดการข้อมูลในเครื่อง
+        </p>
+        <p class="text-[11px] text-slate-500 mb-2">ข้อมูลทั้งหมดถูกบันทึกไว้ในเบราว์เซอร์ของโทรศัพท์เครื่องนี้ คุณสามารถนำเข้าข้อมูลที่สำรองไว้ได้</p>
+        <div class="flex gap-2">
+          <label class="flex-1 text-center py-2 px-2 bg-white border border-slate-300 rounded-lg text-slate-700 font-medium cursor-pointer hover:bg-slate-100">
+            <span>นำเข้าข้อมูล (Restore JSON)</span>
+            <input type="file" id="importFileInput" accept=".json" onchange="importJSONBackup(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar for Mobile -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-lg">
+    <div class="max-w-md mx-auto grid grid-cols-2 px-4 py-2">
+      <button id="navBtnDaily" onclick="switchTab('daily')" class="flex flex-col items-center justify-center py-1 text-indigo-600 font-semibold text-xs touch-btn">
+        <i data-lucide="clipboard-edit" class="w-5 h-5 mb-0.5"></i>
+        <span>บันทึกประจำวัน</span>
+      </button>
+      <button id="navBtnMonthly" onclick="switchTab('monthly')" class="flex flex-col items-center justify-center py-1 text-slate-400 font-medium text-xs touch-btn">
+        <i data-lucide="calendar-check-2" class="w-5 h-5 mb-0.5"></i>
+        <span>สรุปรายเดือน (ลอกฟอร์ม)</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Toast Notification Message Box (No alert() used) -->
+  <div id="toastNotification" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/90 backdrop-blur text-white text-xs px-4 py-2.5 rounded-full shadow-lg pointer-events-none opacity-0 transition-opacity duration-300 flex items-center gap-2">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMessage">บันทึกสำเร็จ</span>
+  </div>
+
+  <!-- Custom Confirmation Modal (No confirm() used) -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-4 shadow-xl">
+      <h4 class="font-bold text-slate-900 text-sm mb-1" id="confirmTitle">ยืนยันการทำรายการ</h4>
+      <p class="text-xs text-slate-600 mb-4" id="confirmDesc">คุณแน่ใจหรือไม่ว่าต้องการดำเนินการนี้?</p>
+      <div class="flex justify-end gap-2">
+        <button id="confirmCancelBtn" class="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">ยกเลิก</button>
+        <button id="confirmOkBtn" class="px-3 py-1.5 text-xs font-semibold text-white bg-rose-600 rounded-lg hover:bg-rose-700">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Data Definitions from User's Excel Sheet ---
+    const P4P_ITEMS = [
+      // Primary Responsibilities (ความรับผิดชอบหลัก)
+      { id: "p1", cat: "primary", no: 1, name: "เตรียมห้อง เครื่องมือก่อนและหลังตรวจ General", time: 30, score: 4.29 },
+      { id: "p2", cat: "primary", no: 2, name: "เตรียมห้อง เครื่องมือก่อนและหลังตรวจพิเศษ", time: 45, score: 6.435 },
+      { id: "p3", cat: "primary", no: 3, name: "Plain X-ray DR/view (walk in)", time: 5, score: 0.715 },
+      { id: "p4", cat: "primary", no: 4, name: "Plain X-ray CR/view (walk in)", time: 10, score: 1.43 },
+      { id: "p5", cat: "primary", no: 5, name: "Plain X-ray DR/view (เปล)", time: 10, score: 1.43 },
+      { id: "p6", cat: "primary", no: 6, name: "Plain X-ray CR/view (เปล)", time: 10, score: 1.43 },
+      { id: "p7", cat: "primary", no: 7, name: "Scanogram/ราย", time: 45, score: 6.435 },
+      { id: "p8", cat: "primary", no: 8, name: "Fluoroscopy/หัตถการ", time: 90, score: 12.87 },
+      { id: "p9", cat: "primary", no: 9, name: "IVP/ราย", time: 120, score: 17.16 },
+      { id: "p10", cat: "primary", no: 10, name: "Mammogram/ราย", time: 50, score: 7.15 },
+      { id: "p11", cat: "primary", no: 11, name: "Ductogram/ราย", time: 90, score: 12.87 },
+      { id: "p12", cat: "primary", no: 12, name: "QC/Calibration mammogram", time: 120, score: 17.16 },
+      { id: "p13", cat: "primary", no: 13, name: "Panoramic, Lat. Cephalogram/view", time: 10, score: 1.43 },
+      { id: "p14", cat: "primary", no: 14, name: "CT dental/ราย", time: 45, score: 6.435 },
+      { id: "p15", cat: "primary", no: 15, name: "Intervention/หัตถการ", time: 120, score: 17.16 },
+      { id: "p16", cat: "primary", no: 16, name: "นัดพร้อมอธิบายผู้ป่วยตรวจพิเศษ", time: 20, score: 2.86 },
+      { id: "p17", cat: "primary", no: 17, name: "จัดการระบบ PACS (CD,Data, นำภาพเข้า)", time: 15, score: 2.145 },
+      { id: "p18", cat: "primary", no: 18, name: "แก้ปัญหา PACS ที่ผิดพลาด/job", time: 30, score: 4.29 },
+      { id: "p19", cat: "primary", no: 19, name: "ติดต่อประสานงานระหว่างหน่วยงานอื่นๆ ที่เกี่ยวข้อง", time: 5, score: 0.715 },
+
+      // Secondary Responsibilities (ความรับผิดชอบรอง)
+      { id: "s1", cat: "secondary", no: 1, name: "เขียนใบเบิก/ใบส่งคืน/ใบซ่อม ส่งฝ่ายพัสดุ/ห้องยา/คลังยา", time: 30, score: 4.29 },
+      { id: "s2", cat: "secondary", no: 2, name: "ประชุมวิชาการ", time: 60, score: 8.58 },
+      { id: "s3", cat: "secondary", no: 3, name: "งานที่ได้รับมอบหมาย", time: 60, score: 8.58 },
+      { id: "s4", cat: "secondary", no: 4, name: "งานธุรการ", time: 180, score: 25.74 },
+      { id: "s5", cat: "secondary", no: 5, name: "จัดตารางปฏิบัติงานนักรังสีเทคนิค, จพ.รังสีเทคนิค", time: 180, score: 25.74 },
+      { id: "s6", cat: "secondary", no: 6, name: "งานอื่น .....(อบรม, ฯลฯ)......", time: 60, score: 8.58 }
+    ];
+
+    // Local Storage Key
+    const STORAGE_KEY = "p4p_xray_records_v1";
+
+    // App State
+    let currentDate = getTodayDateString(); // YYYY-MM-DD
+    let db = {}; // Format: { "YYYY-MM-DD": { "p1": 5, "p3": 20, ... } }
+
+    // Init App
+    window.addEventListener("DOMContentLoaded", () => {
+      loadDataFromStorage();
+      document.getElementById("selectedDate").value = currentDate;
+      
+      const currentMonth = currentDate.substring(0, 7); // YYYY-MM
+      document.getElementById("selectedMonth").value = currentMonth;
+
+      renderDailyList();
+      updateHeaderAndDailySummary();
+
+      // Setup icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
+
+    // --- Helper Functions ---
+    function getTodayDateString() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatThaiDate(dateStr) {
+      if (!dateStr) return "";
+      const [y, m, d] = dateStr.split("-").map(Number);
+      const monthsThai = [
+        "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+        "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+      ];
+      return `${d} ${monthsThai[m - 1]} ${y + 543}`;
+    }
+
+    function loadDataFromStorage() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          db = JSON.parse(stored);
+        } else {
+          db = {};
+        }
+      } catch (e) {
+        console.error("Failed to load local storage:", e);
+        db = {};
+      }
+    }
+
+    function saveDataToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+      } catch (e) {
+        console.error("Failed to save to local storage:", e);
+        showToast("พื้นที่เก็บข้อมูลเต็มหรือไม่สามารถบันทึกได้");
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toastNotification");
+      const text = document.getElementById("toastMessage");
+      text.innerText = msg;
+      toast.classList.remove("opacity-0");
+      toast.classList.add("opacity-100");
+      setTimeout(() => {
+        toast.classList.remove("opacity-100");
+        toast.classList.add("opacity-0");
+      }, 2000);
+    }
+
+    function toggleQuickTips() {
+      const modal = document.getElementById("quickTipsModal");
+      modal.classList.toggle("hidden");
+    }
+
+    // --- Tab Switching ---
+    function switchTab(tab) {
+      const viewDaily = document.getElementById("viewDaily");
+      const viewMonthly = document.getElementById("viewMonthly");
+      const btnDaily = document.getElementById("navBtnDaily");
+      const btnMonthly = document.getElementById("navBtnMonthly");
+
+      if (tab === 'daily') {
+        viewDaily.classList.remove("hidden");
+        viewMonthly.classList.add("hidden");
+        btnDaily.className = "flex flex-col items-center justify-center py-1 text-indigo-600 font-semibold text-xs touch-btn";
+        btnMonthly.className = "flex flex-col items-center justify-center py-1 text-slate-400 font-medium text-xs touch-btn";
+        renderDailyList();
+        updateHeaderAndDailySummary();
+      } else {
+        viewDaily.classList.add("hidden");
+        viewMonthly.classList.remove("hidden");
+        btnDaily.className = "flex flex-col items-center justify-center py-1 text-slate-400 font-medium text-xs touch-btn";
+        btnMonthly.className = "flex flex-col items-center justify-center py-1 text-indigo-600 font-semibold text-xs touch-btn";
+        renderMonthlySummary();
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // --- Date Navigation ---
+    function onDateChanged() {
+      const inputVal = document.getElementById("selectedDate").value;
+      if (inputVal) {
+        currentDate = inputVal;
+        renderDailyList();
+        updateHeaderAndDailySummary();
+      }
+    }
+
+    function changeDateOffset(delta) {
+      const parts = currentDate.split("-").map(Number);
+      const d = new Date(parts[0], parts[1] - 1, parts[2]);
+      d.setDate(d.getDate() + delta);
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      
+      currentDate = `${year}-${month}-${day}`;
+      document.getElementById("selectedDate").value = currentDate;
+      renderDailyList();
+      updateHeaderAndDailySummary();
+    }
+
+    function setToday() {
+      currentDate = getTodayDateString();
+      document.getElementById("selectedDate").value = currentDate;
+      renderDailyList();
+      updateHeaderAndDailySummary();
+    }
+
+    // --- Counter Manipulation ---
+    function getCurrentDayData() {
+      if (!db[currentDate]) {
+        db[currentDate] = {};
+      }
+      return db[currentDate];
+    }
+
+    function modifyCount(id, delta) {
+      const dayData = getCurrentDayData();
+      const currentVal = dayData[id] || 0;
+      const newVal = Math.max(0, currentVal + delta);
+      
+      if (newVal === 0) {
+        delete dayData[id];
+      } else {
+        dayData[id] = newVal;
+      }
+      
+      saveDataToStorage();
+      updateSingleItemUI(id, newVal);
+      updateHeaderAndDailySummary();
+    }
+
+    function setDirectCount(id, value) {
+      let num = parseInt(value, 10);
+      if (isNaN(num) || num < 0) num = 0;
+      
+      const dayData = getCurrentDayData();
+      if (num === 0) {
+        delete dayData[id];
+      } else {
+        dayData[id] = num;
+      }
+
+      saveDataToStorage();
+      updateSingleItemUI(id, num);
+      updateHeaderAndDailySummary();
+    }
+
+    function updateSingleItemUI(id, count) {
+      const countInput = document.getElementById(`count-${id}`);
+      if (countInput) {
+        countInput.value = count > 0 ? count : "";
+      }
+      const scoreBadge = document.getElementById(`item-score-${id}`);
+      const item = P4P_ITEMS.find(it => it.id === id);
+      if (scoreBadge && item) {
+        const itemScore = (count * item.score);
+        scoreBadge.innerText = itemScore > 0 ? `${itemScore.toFixed(2)} คะแนน` : `0 คะแนน`;
+        if (count > 0) {
+          scoreBadge.className = "text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full";
+        } else {
+          scoreBadge.className = "text-[11px] font-medium text-slate-400";
+        }
+      }
+    }
+
+    // --- Render Daily View ---
+    function renderDailyList() {
+      const dayData = getCurrentDayData();
+      const primaryContainer = document.getElementById("primaryItemsList");
+      const secondaryContainer = document.getElementById("secondaryItemsList");
+
+      primaryContainer.innerHTML = "";
+      secondaryContainer.innerHTML = "";
+
+      P4P_ITEMS.forEach(item => {
+        const count = dayData[item.id] || 0;
+        const totalItemScore = (count * item.score).toFixed(2);
+        const isHighlight = count > 0;
+
+        const cardHtml = `
+          <div class="p4p-item-card bg-white rounded-2xl p-3 border ${isHighlight ? 'border-indigo-300 ring-1 ring-indigo-200 shadow-sm' : 'border-slate-200/90'} transition-all" data-name="${item.name.toLowerCase()}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="flex-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[11px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">#${item.no}</span>
+                  <span class="text-xs text-slate-500 font-medium">⏱ ${item.time} นาที (${item.score} คะแนน)</span>
+                </div>
+                <h3 class="text-xs font-semibold text-slate-800 leading-snug mt-1">${item.name}</h3>
+              </div>
+              <div class="text-right shrink-0">
+                <span id="item-score-${item.id}" class="${isHighlight ? 'text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full' : 'text-[11px] font-medium text-slate-400'}">
+                  ${count > 0 ? `${totalItemScore} คะแนน` : '0 คะแนน'}
+                </span>
+              </div>
+            </div>
+
+            <!-- Touch Stepper & Direct Input -->
+            <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
+              <span class="text-[11px] text-slate-400 font-medium">จำนวนเคส:</span>
+              
+              <div class="flex items-center space-x-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                <!-- Minus Button -->
+                <button onclick="modifyCount('${item.id}', -1)" class="w-10 h-9 rounded-lg bg-white border border-slate-200 text-slate-700 font-bold text-lg flex items-center justify-center active:bg-slate-200 shadow-sm touch-btn">
+                  -
+                </button>
+                
+                <!-- Direct Number Field -->
+                <input type="number" id="count-${item.id}" value="${count > 0 ? count : ''}" placeholder="0"
+                  onchange="setDirectCount('${item.id}', this.value)"
+                  class="w-14 h-9 text-center font-bold text-base text-slate-800 bg-transparent focus:outline-none focus:bg-white rounded-md">
+                
+                <!-- Plus Button -->
+                <button onclick="modifyCount('${item.id}', 1)" class="w-11 h-9 rounded-lg bg-indigo-600 text-white font-bold text-xl flex items-center justify-center active:bg-indigo-700 shadow-sm touch-btn">
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        if (item.cat === "primary") {
+          primaryContainer.insertAdjacentHTML("beforeend", cardHtml);
+        } else {
+          secondaryContainer.insertAdjacentHTML("beforeend", cardHtml);
+        }
+      });
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // --- Search / Filter Items ---
+    function filterItems() {
+      const query = document.getElementById("filterInput").value.trim().toLowerCase();
+      const clearBtn = document.getElementById("clearSearchBtn");
+      
+      if (query) {
+        clearBtn.classList.remove("hidden");
+      } else {
+        clearBtn.classList.add("hidden");
+      }
+
+      const cards = document.querySelectorAll(".p4p-item-card");
+      cards.forEach(card => {
+        const name = card.getAttribute("data-name") || "";
+        if (name.includes(query)) {
+          card.classList.remove("hidden");
+        } else {
+          card.classList.add("hidden");
+        }
+      });
+    }
+
+    function clearSearch() {
+      document.getElementById("filterInput").value = "";
+      filterItems();
+    }
+
+    // --- Update Summaries ---
+    function updateHeaderAndDailySummary() {
+      const dayData = getCurrentDayData();
+      let dayJobs = 0;
+      let dayScore = 0;
+      let dayTime = 0;
+      let primaryScore = 0;
+      let secondaryScore = 0;
+
+      P4P_ITEMS.forEach(item => {
+        const count = dayData[item.id] || 0;
+        if (count > 0) {
+          dayJobs += count;
+          const score = count * item.score;
+          dayScore += score;
+          dayTime += (count * item.time);
+          if (item.cat === "primary") {
+            primaryScore += score;
+          } else {
+            secondaryScore += score;
+          }
+        }
+      });
+
+      // Update Header
+      const isToday = (currentDate === getTodayDateString());
+      document.getElementById("headerDateLabel").innerText = isToday ? "วันที่: วันนี้" : `วันที่: ${formatThaiDate(currentDate)}`;
+      document.getElementById("headerDayCount").innerText = dayJobs;
+      document.getElementById("headerDayScore").innerText = dayScore.toFixed(2);
+
+      // Update Daily Summary Box
+      document.getElementById("dayTotalJobs").innerText = dayJobs;
+      document.getElementById("dayTotalScore").innerText = dayScore.toFixed(2);
+      document.getElementById("dayTotalTime").innerText = dayTime;
+
+      // Update Category badges
+      document.getElementById("catPrimaryScoreBadge").innerText = `${primaryScore.toFixed(2)} คะแนน`;
+      document.getElementById("catSecondaryScoreBadge").innerText = `${secondaryScore.toFixed(2)} คะแนน`;
+    }
+
+    // --- Reset Single Day ---
+    function confirmResetDay() {
+      showCustomConfirm("ล้างข้อมูลของวันนี้?", `ต้องการล้างค่าที่บันทึกของวันที่ ${formatThaiDate(currentDate)} ใช่หรือไม่?`, () => {
+        delete db[currentDate];
+        saveDataToStorage();
+        renderDailyList();
+        updateHeaderAndDailySummary();
+        showToast("ล้างข้อมูลของวันเรียบร้อย");
+      });
+    }
+
+    // --- Monthly Summary & Excel Matching View ---
+    function changeMonthOffset(delta) {
+      const monthInput = document.getElementById("selectedMonth");
+      let [year, month] = monthInput.value.split("-").map(Number);
+      
+      month += delta;
+      if (month < 1) {
+        month = 12;
+        year -= 1;
+      } else if (month > 12) {
+        month = 1;
+        year += 1;
+      }
+
+      const newMonthVal = `${year}-${String(month).padStart(2, "0")}`;
+      monthInput.value = newMonthVal;
+      renderMonthlySummary();
+    }
+
+    function renderMonthlySummary() {
+      const monthStr = document.getElementById("selectedMonth").value; // "YYYY-MM"
+      if (!monthStr) return;
+
+      // Aggregate counts for the month
+      const monthlyCounts = {};
+      P4P_ITEMS.forEach(item => { monthlyCounts[item.id] = 0; });
+
+      let recordedDaysSet = new Set();
+      let grandTotalScore = 0;
+      let primaryTotalScore = 0;
+      let secondaryTotalScore = 0;
+
+      for (const [date, data] of Object.entries(db)) {
+        if (date.startsWith(monthStr)) {
+          let hasEntries = false;
+          for (const [itemId, count] of Object.entries(data)) {
+            if (count > 0) {
+              hasEntries = true;
+              monthlyCounts[itemId] = (monthlyCounts[itemId] || 0) + count;
+            }
+          }
+          if (hasEntries) {
+            recordedDaysSet.add(date);
+          }
+        }
+      }
+
+      // Calculate scores
+      P4P_ITEMS.forEach(item => {
+        const totalUnits = monthlyCounts[item.id] || 0;
+        const totalScore = totalUnits * item.score;
+        grandTotalScore += totalScore;
+        if (item.cat === "primary") {
+          primaryTotalScore += totalScore;
+        } else {
+          secondaryTotalScore += totalScore;
+        }
+      });
+
+      // Update Top stats
+      document.getElementById("monthGrandScore").innerText = grandTotalScore.toFixed(2);
+      document.getElementById("monthPrimaryScore").innerText = `${primaryTotalScore.toFixed(2)} คะแนน`;
+      document.getElementById("monthSecondaryScore").innerText = `${secondaryTotalScore.toFixed(2)} คะแนน`;
+      document.getElementById("monthRecordedDaysCount").innerText = `${recordedDaysSet.size} วันที่มีบันทึก`;
+
+      // Render Summary Table Body matching original Excel
+      const tbody = document.getElementById("monthlySummaryTableBody");
+      tbody.innerHTML = "";
+
+      // Section 1 Header: ความรับผิดชอบหลัก
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="bg-indigo-100/70 text-indigo-950 font-bold text-xs">
+          <td colspan="4" class="py-2 px-2">ความรับผิดชอบหลัก</td>
+        </tr>
+      `);
+
+      P4P_ITEMS.filter(it => it.cat === "primary").forEach(item => {
+        const units = monthlyCounts[item.id] || 0;
+        const itemScore = (units * item.score).toFixed(2);
+        const highlightClass = units > 0 ? "bg-amber-50 font-bold text-slate-900" : "text-slate-400";
+
+        tbody.insertAdjacentHTML("beforeend", `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2 px-2 text-slate-700">
+              <span class="text-slate-400 font-semibold">${item.no}.</span> ${item.name}
+            </td>
+            <td class="py-2 px-1 text-center font-mono ${highlightClass} text-sm">
+              ${units > 0 ? units : '0'}
+            </td>
+            <td class="py-2 px-1 text-right text-slate-500 font-mono text-[11px]">
+              ${item.score}
+            </td>
+            <td class="py-2 px-2 text-right font-mono font-medium ${units > 0 ? 'text-indigo-700 font-semibold' : 'text-slate-400'}">
+              ${itemScore}
+            </td>
+          </tr>
+        `);
+      });
+
+      // Subtotal Primary
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="bg-slate-100 font-bold text-slate-800 border-t border-b border-slate-300">
+          <td colspan="3" class="py-2 px-2 text-right">รวมคะแนนหน้าที่รับผิดชอบหลัก:</td>
+          <td class="py-2 px-2 text-right text-indigo-800 font-mono text-sm">${primaryTotalScore.toFixed(2)}</td>
+        </tr>
+      `);
+
+      // Section 2 Header: ความรับผิดชอบรอง
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="bg-emerald-100/70 text-emerald-950 font-bold text-xs">
+          <td colspan="4" class="py-2 px-2">ความรับผิดชอบรอง</td>
+        </tr>
+      `);
+
+      P4P_ITEMS.filter(it => it.cat === "secondary").forEach(item => {
+        const units = monthlyCounts[item.id] || 0;
+        const itemScore = (units * item.score).toFixed(2);
+        const highlightClass = units > 0 ? "bg-amber-50 font-bold text-slate-900" : "text-slate-400";
+
+        tbody.insertAdjacentHTML("beforeend", `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2 px-2 text-slate-700">
+              <span class="text-slate-400 font-semibold">${item.no}.</span> ${item.name}
+            </td>
+            <td class="py-2 px-1 text-center font-mono ${highlightClass} text-sm">
+              ${units > 0 ? units : '0'}
+            </td>
+            <td class="py-2 px-1 text-right text-slate-500 font-mono text-[11px]">
+              ${item.score}
+            </td>
+            <td class="py-2 px-2 text-right font-mono font-medium ${units > 0 ? 'text-emerald-700 font-semibold' : 'text-slate-400'}">
+              ${itemScore}
+            </td>
+          </tr>
+        `);
+      });
+
+      // Subtotal Secondary
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="bg-slate-100 font-bold text-slate-800 border-t border-b border-slate-300">
+          <td colspan="3" class="py-2 px-2 text-right">รวมคะแนนหน้าที่รับผิดชอบรอง:</td>
+          <td class="py-2 px-2 text-right text-emerald-800 font-mono text-sm">${secondaryTotalScore.toFixed(2)}</td>
+        </tr>
+      `);
+
+      // Grand Total Row
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr class="bg-indigo-900 text-white font-bold text-sm">
+          <td colspan="3" class="py-2.5 px-2 text-right">คะแนนรวมทั้งหมดประจำเดือน:</td>
+          <td class="py-2.5 px-2 text-right text-amber-300 font-mono">${grandTotalScore.toFixed(2)}</td>
+        </tr>
+      `);
+    }
+
+    // --- Copy Summary to Clipboard (Excel Ready Tab-Delimited) ---
+    function copySummaryToClipboard() {
+      const monthStr = document.getElementById("selectedMonth").value;
+      const monthlyCounts = {};
+      P4P_ITEMS.forEach(item => { monthlyCounts[item.id] = 0; });
+
+      for (const [date, data] of Object.entries(db)) {
+        if (date.startsWith(monthStr)) {
+          for (const [itemId, count] of Object.entries(data)) {
+            if (count > 0) {
+              monthlyCounts[itemId] = (monthlyCounts[itemId] || 0) + count;
+            }
+          }
+        }
+      }
+
+      // Generate Tab-delimited text so it pastes directly into Excel columns
+      let tsv = "กิจกรรมบริการ\tจำนวน\tเวลา (นาที)\tคะแนนต่อหน่วย\tคะแนนที่ได้\n";
+      tsv += "ความรับผิดชอบหลัก\t\t\t\t\n";
+      
+      let pScore = 0;
+      P4P_ITEMS.filter(it => it.cat === "primary").forEach(item => {
+        const count = monthlyCounts[item.id] || 0;
+        const total = (count * item.score);
+        pScore += total;
+        tsv += `${item.no}. ${item.name}\t${count}\t${item.time}\t${item.score}\t${total.toFixed(2)}\n`;
+      });
+      tsv += `รวมคะแนนหน้าที่รับผิดชอบหลัก\t\t\t\t${pScore.toFixed(2)}\n`;
+
+      tsv += "ความรับผิดชอบรอง\t\t\t\t\n";
+      let sScore = 0;
+      P4P_ITEMS.filter(it => it.cat === "secondary").forEach(item => {
+        const count = monthlyCounts[item.id] || 0;
+        const total = (count * item.score);
+        sScore += total;
+        tsv += `${item.no}. ${item.name}\t${count}\t${item.time}\t${item.score}\t${total.toFixed(2)}\n`;
+      });
+      tsv += `รวมคะแนนหน้าที่รับผิดชอบรอง\t\t\t\t${sScore.toFixed(2)}\n`;
+      tsv += `รวมคะแนนทั้งหมด\t\t\t\t${(pScore + sScore).toFixed(2)}\n`;
+
+      // Copy using fallback textarea for iframe compatibility
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = tsv;
+      tempTextArea.style.position = "fixed";
+      tempTextArea.style.left = "-9999px";
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      
+      try {
+        const successful = document.execCommand("copy");
+        if (successful) {
+          showToast("คัดลอกตารางแล้ว! สามารถนำไป Paste ใน Excel ได้ทันที");
+        } else {
+          showToast("ไม่สามารถคัดลอกได้");
+        }
+      } catch (err) {
+        showToast("เกิดข้อผิดพลาดในการคัดลอก");
+      }
+      document.body.removeChild(tempTextArea);
+    }
+
+    // --- Export / Import JSON Backup ---
+    function exportJSONBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `p4p_backup_${getTodayDateString()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("ดาวน์โหลดไฟล์สำรองเรียบร้อย");
+    }
+
+    function importJSONBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedObj = JSON.parse(e.target.result);
+          if (typeof importedObj === "object" && importedObj !== null) {
+            showCustomConfirm("นำเข้าข้อมูล?", "ข้อมูลใหม่จะถูกผสานเข้ากับข้อมูลปัจจุบัน ต้องการดำเนินการต่อหรือไม่?", () => {
+              db = { ...db, ...importedObj };
+              saveDataToStorage();
+              renderDailyList();
+              updateHeaderAndDailySummary();
+              renderMonthlySummary();
+              showToast("นำเข้าข้อมูลสำเร็จแล้ว");
+            });
+          } else {
+            showToast("รูปแบบไฟล์ไม่ถูกต้อง");
+          }
+        } catch (err) {
+          showToast("เกิดข้อผิดพลาดในการอ่านไฟล์");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = ""; // reset input
+    }
+
+    // --- Custom Modal System (No alert / confirm) ---
+    function showCustomConfirm(title, message, onConfirm) {
+      const modal = document.getElementById("confirmModal");
+      const titleEl = document.getElementById("confirmTitle");
+      const descEl = document.getElementById("confirmDesc");
+      const okBtn = document.getElementById("confirmOkBtn");
+      const cancelBtn = document.getElementById("confirmCancelBtn");
+
+      titleEl.innerText = title;
+      descEl.innerText = message;
+      modal.classList.remove("hidden");
+
+      const cleanup = () => {
+        modal.classList.add("hidden");
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+      };
+
+      okBtn.onclick = () => {
+        cleanup();
+        if (typeof onConfirm === "function") onConfirm();
+      };
+
+      cancelBtn.onclick = () => {
+        cleanup();
+      };
+    }
+  </script>
+</body>
+</html>
